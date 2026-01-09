@@ -105,7 +105,26 @@ install_config_lsp() {
         exit 1
     fi
     sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
+
+    # check path to nvim in bashrc
+    local path_entry='export PATH="$PATH:/opt/nvim-linux-x86_64/bin"'
+    local bashrc_file="$HOME/.bashrc"
+
+    if ! grep -Fq "$path_entry" "$bashrc_file"; then
+        echo "$path_entry" >> "$bashrc_file"
+        echo "Added '$path_entry' to $bashrc_file"
+    else
+        echo "'$path_entry' already exists in $bashrc_file"
+    fi
     echo "Neovim installed"
+
+    echo "Installing config files"
+    if ! git clone https://github.com/SmthFail/nvim_config.git ~/.config/nvim; then
+        echo "Can't clone config" >%2
+        exit 1
+    fi
+    
+
 
     # Install uv if need. Not delete it
     if ! command_exists uv; then
