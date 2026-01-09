@@ -5,7 +5,16 @@ vim.g.maplocalleader = ' '
 -- Disable the spacebar key's default behavior in Normal and Visual modes
 vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 
+-- Clear highlights on search when press <Esc> in normal mode
+vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
+
+-- Terminal
+-- exit from builtin terminal
+vim.keymap.set('t', '<C-n>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+
+
 -- For conciseness
+-- noremap - didn't remap command, silent - didn't show comman in command line
 local opts = { noremap = true, silent = true }
 
 -- Resize with arrows
@@ -30,11 +39,4 @@ vim.keymap.set('n', '<C-k>', ':wincmd k<CR>', opts)
 vim.keymap.set('n', '<C-j>', ':wincmd j<CR>', opts)
 vim.keymap.set('n', '<C-h>', ':wincmd h<CR>', opts)
 vim.keymap.set('n', '<C-l>', ':wincmd l<CR>', opts)
-
---vim.keymap.set('i', '<leader>a', function()
---    vim.schedule(function()
---      vim.lsp.completion.get()                                -- меню без префикса
---  end)
---  return ''
---end, { expr = true, noremap = true, silent = true })
 

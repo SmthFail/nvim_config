@@ -1,3 +1,13 @@
+# Overview
+
+Some minimalistic config for neovim with less as possible dependancies.
+
+# Installation
+For single command installation use command below. It download nvim, config and deps (with tui ui)
+```
+
+```
+
 # Dependensies
 
 1. Telescope need `rgrep`
