@@ -21,6 +21,7 @@ require('lazy').setup({
     require 'plugins.treesitter',
     require 'plugins.telescope',
     require 'plugins.autopairs',
+    require 'plugins.blink_cmp',
 })
 
 

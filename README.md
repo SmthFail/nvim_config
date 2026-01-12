@@ -3,10 +3,16 @@
 Some minimalistic config for neovim with less as possible dependancies.
 
 # Installation
-For single command installation use command below. It download nvim, config and deps (with tui ui)
+## Scritp
+For script installation use commands:
 ```
-curl -fsSL https://raw.githubusercontent.com/SmthFail/nvim_config/main/install.sh | bash 
+curl -fsSL https://raw.githubusercontent.com/SmthFail/nvim_config/main/install.sh -o ./install_config.sh
+chmod +x ./install_config.sh
+./install_config.sh
 ```
+## Clone repo (manual)
+
+TODO
 
 # Dependensies
 
