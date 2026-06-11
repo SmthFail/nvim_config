@@ -4,6 +4,7 @@ set -euo pipefail
 
 # ============================================================
 # Neovim 0.12 Custom Environment Setup
+#
 # Safe for:
 #   curl -fsSL https://raw.githubusercontent.com/SmthFail/nvim_config/main/install.sh | bash
 # ============================================================
@@ -13,13 +14,17 @@ NVIM_ARCHIVE="nvim-linux-x86_64.tar.gz"
 NVIM_URL="https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/${NVIM_ARCHIVE}"
 
 CONFIG_REPO="${CONFIG_REPO:-https://github.com/SmthFail/nvim_config.git}"
+
 UV_INSTALL_URL="https://astral.sh/uv/install.sh"
+RUSTUP_INSTALL_URL="https://sh.rustup.rs"
+CARGO_BINSTALL_INSTALL_URL="https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh"
 
 RUST_ANALYZER_URL="https://github.com/rust-lang/rust-analyzer/releases/latest/download/rust-analyzer-x86_64-unknown-linux-gnu.gz"
 LUALS_API_URL="https://api.github.com/repos/LuaLS/lua-language-server/releases/latest"
 
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
 LOCAL_BIN="$HOME/.local/bin"
+CARGO_BIN="$HOME/.cargo/bin"
 
 TMP_DIR=""
 
@@ -140,6 +145,21 @@ detect_existing_installations() {
         found_any=true
     fi
 
+    if command_exists cargo; then
+        echo "  [FOUND] cargo ($(command -v cargo))"
+        found_any=true
+    fi
+
+    if cargo binstall --version >/dev/null 2>&1; then
+        echo "  [FOUND] cargo-binstall"
+        found_any=true
+    fi
+
+    if command_exists tree-sitter; then
+        echo "  [FOUND] tree-sitter ($(command -v tree-sitter))"
+        found_any=true
+    fi
+
     if [ "$found_any" = true ]; then
         echo
         echo "⚠️  WARNING: Some components are already present in your system."
@@ -161,11 +181,14 @@ ensure_system_deps() {
         ca-certificates
         curl
         gcc
+        g++
         git
         gzip
         make
+        pkg-config
         ripgrep
         tar
+        build-essential
     )
 
     local missing=()
@@ -208,6 +231,11 @@ install_neovim() {
     run_as_root ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
 
     echo "✓ Neovim installed to /usr/local/bin/nvim"
+
+    if command_exists nvim; then
+        nvim --version | head -n 1 || true
+    fi
+
     echo
 }
 
@@ -263,10 +291,86 @@ install_uv() {
 install_python_tools() {
     echo "Installing/upgrading Python tools via uv..."
 
+    export PATH="$LOCAL_BIN:$PATH"
+
     uv tool install ruff@latest --force
     uv tool install ty@latest --force
 
     echo "✓ ruff and ty installed/upgraded"
+
+    if command_exists ruff; then
+        echo "  ruff: $(command -v ruff)"
+    fi
+
+    if command_exists ty; then
+        echo "  ty: $(command -v ty)"
+    fi
+
+    echo
+}
+
+install_rust_toolchain() {
+    echo "Checking Rust toolchain..."
+
+    export PATH="$CARGO_BIN:$PATH"
+
+    if ! command_exists cargo; then
+        echo "cargo not found. Installing Rust via rustup..."
+        curl --proto '=https' --tlsv1.2 -sSf "$RUSTUP_INSTALL_URL" | sh -s -- -y
+        export PATH="$CARGO_BIN:$PATH"
+    else
+        echo "cargo already installed: $(command -v cargo)"
+    fi
+
+    if ! command_exists cargo; then
+        echo "Error: cargo was installed, but it is not available in PATH." >&2
+        echo "Expected path: $CARGO_BIN/cargo" >&2
+        exit 1
+    fi
+
+    echo "✓ cargo available at $(command -v cargo)"
+    cargo --version || true
+    echo
+}
+
+install_cargo_binstall() {
+    echo "Checking cargo-binstall..."
+
+    export PATH="$CARGO_BIN:$PATH"
+
+    if ! cargo binstall --version >/dev/null 2>&1; then
+        echo "cargo-binstall not found. Installing..."
+        curl -L --proto '=https' --tlsv1.2 -sSf "$CARGO_BINSTALL_INSTALL_URL" | bash
+        export PATH="$CARGO_BIN:$PATH"
+    else
+        echo "cargo-binstall already installed."
+    fi
+
+    if ! cargo binstall --version >/dev/null 2>&1; then
+        echo "Error: cargo-binstall was installed, but 'cargo binstall' is not available." >&2
+        exit 1
+    fi
+
+    echo "✓ cargo-binstall available"
+    cargo binstall --version || true
+    echo
+}
+
+install_tree_sitter_cli() {
+    echo "Installing/upgrading tree-sitter-cli via cargo-binstall..."
+
+    export PATH="$CARGO_BIN:$PATH"
+
+    cargo binstall tree-sitter-cli --no-confirm
+
+    if ! command_exists tree-sitter; then
+        echo "Error: tree-sitter-cli was installed, but 'tree-sitter' is not available in PATH." >&2
+        echo "Expected path usually: $CARGO_BIN/tree-sitter" >&2
+        exit 1
+    fi
+
+    echo "✓ tree-sitter installed at $(command -v tree-sitter)"
+    tree-sitter --version || true
     echo
 }
 
@@ -318,16 +422,46 @@ install_lua_language_server() {
     echo "  $luals_url"
 
     local luals_tmp="$TMP_DIR/lua-language-server.tar.gz"
+
     download_file "$luals_url" "$luals_tmp"
 
     run_as_root rm -rf /opt/lua-language-server
     run_as_root mkdir -p /opt/lua-language-server
     run_as_root tar -xzf "$luals_tmp" -C /opt/lua-language-server
 
-    run_as_root mkdir -p /usr/local/bin
-    run_as_root ln -sf /opt/lua-language-server/bin/lua-language-server /usr/local/bin/lua-language-server
+    # Create a wrapper instead of a direct symlink.
+    # LuaLS defaults log/meta/cache paths to its working/install directory.
+    # If it is installed into /opt, a regular user cannot write there.
+    # The wrapper forces LuaLS to store writable data inside the user's cache.
+    local wrapper="$TMP_DIR/lua-language-server-wrapper"
 
-    echo "✓ lua-language-server installed to /usr/local/bin/lua-language-server"
+    cat > "$wrapper" <<'EOF'
+#!/usr/bin/env bash
+set -e
+
+CACHE_BASE="${XDG_CACHE_HOME:-$HOME/.cache}/lua-language-server"
+
+mkdir -p "$CACHE_BASE/log" "$CACHE_BASE/meta"
+
+/opt/lua-language-server/bin/lua-language-server \
+    --logpath="$CACHE_BASE/log" \
+    --metapath="$CACHE_BASE/meta" \
+    "$@"
+EOF
+
+    chmod +x "$wrapper"
+
+    run_as_root mkdir -p /usr/local/bin
+    run_as_root install -m 0755 "$wrapper" /usr/local/bin/lua-language-server
+
+    echo "✓ lua-language-server installed to /opt/lua-language-server"
+    echo "✓ wrapper installed to /usr/local/bin/lua-language-server"
+
+    if command_exists lua-language-server; then
+        echo "  Active lua-language-server: $(command -v lua-language-server)"
+        lua-language-server --version || true
+    fi
+
     echo
 }
 
@@ -342,6 +476,19 @@ print_final_message() {
     echo "  :checkhealth"
     echo "  :checkhealth vim.lsp"
     echo "  :packupdate"
+    echo
+    echo "Useful checks:"
+    echo "  nvim --version"
+    echo "  ruff --version"
+    echo "  ty --version"
+    echo "  rust-analyzer --version"
+    echo "  tree-sitter --version"
+    echo "  lua-language-server --version"
+    echo
+    echo "If your shell does not see tools installed into ~/.local/bin or ~/.cargo/bin,"
+    echo "add these lines to ~/.bashrc or ~/.zshrc:"
+    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo "  export PATH=\"\$HOME/.cargo/bin:\$PATH\""
     echo
     echo "If telescope-fzf-native is enabled, compile it once:"
     echo "  cd ~/.local/share/nvim/site/pack/core/opt/telescope-fzf-native.nvim && make"
@@ -364,6 +511,11 @@ main() {
 
     install_uv
     install_python_tools
+
+    install_rust_toolchain
+    install_cargo_binstall
+    install_tree_sitter_cli
+
     install_rust_analyzer
     install_lua_language_server
 
@@ -371,3 +523,5 @@ main() {
 }
 
 main "$@"
+
+# vim: ft=bash

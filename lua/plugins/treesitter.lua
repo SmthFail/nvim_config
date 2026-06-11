@@ -3,7 +3,6 @@
 local parsers = {
   'bash',
   'json',
-  'jsonc',
   'lua',
   'markdown',
   'markdown_inline',
@@ -20,20 +19,7 @@ require('nvim-treesitter').install(parsers)
 
 vim.api.nvim_create_autocmd('FileType', {
   group = vim.api.nvim_create_augroup('treesitter-start', { clear = true }),
-  pattern = {
-    'bash',
-    'sh',
-    'json',
-    'jsonc',
-    'lua',
-    'markdown',
-    'python',
-    'rust',
-    'toml',
-    'vim',
-    'vimdoc',
-    'yaml',
-  },
+  pattern = parsers,
   callback = function(event)
     pcall(vim.treesitter.start, event.buf)
 
