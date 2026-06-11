@@ -40,3 +40,12 @@ vim.keymap.set('n', '<C-j>', ':wincmd j<CR>', opts)
 vim.keymap.set('n', '<C-h>', ':wincmd h<CR>', opts)
 vim.keymap.set('n', '<C-l>', ':wincmd l<CR>', opts)
 
+
+
+-- Native LSP completion manual trigger.
+-- Some terminals send <C-@> instead of <C-Space>, so both are mapped.
+local trigger_lsp_completion = function()
+  vim.lsp.completion.get()
+end
+vim.keymap.set('i', '<C-Space>', trigger_lsp_completion, { desc = 'Trigger LSP completion' })
+vim.keymap.set('i', '<C-@>', trigger_lsp_completion, { desc = 'Trigger LSP completion' })

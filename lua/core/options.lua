@@ -44,3 +44,10 @@ vim.o.inccommand = 'split' -- Preview substituytions live when typing
 vim.o.confirm = true -- raise dialog when operation fail due to unsave change in the buffer (like `:q`)
 
 
+
+
+-- Native insert completion menu.
+-- menuone  - show menu even for a single item
+-- noselect - do not preselect the first item
+-- popup    - show documentation popup for completion items when available
+vim.opt.completeopt = { 'menuone', 'noselect', 'popup' }
