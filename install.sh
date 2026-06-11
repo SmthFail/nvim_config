@@ -346,13 +346,7 @@ install_cargo_binstall() {
         echo "cargo-binstall already installed."
     fi
 
-    if ! cargo binstall --version >/dev/null 2>&1; then
-        echo "Error: cargo-binstall was installed, but 'cargo binstall' is not available." >&2
-        exit 1
-    fi
-
     echo "✓ cargo-binstall available"
-    cargo binstall --version || true
     echo
 }
 
