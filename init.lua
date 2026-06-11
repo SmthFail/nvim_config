@@ -22,6 +22,7 @@ require('lazy').setup({
     require 'plugins.telescope',
     require 'plugins.autopairs',
     require 'plugins.blink_cmp',
+    require 'plugins.render-markdown',
 })
 
 
