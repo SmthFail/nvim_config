@@ -23,7 +23,7 @@ vim.pack.add({
   { src = 'https://github.com/MeanderingProgrammer/render-markdown.nvim' },
 
   -- Telescope
-  { src = 'https://github.com/nvim-telescope/telescope.nvim', version = '0.1.x' },
+  { src = 'https://github.com/nvim-telescope/telescope.nvim' },
   { src = 'https://github.com/nvim-telescope/telescope-ui-select.nvim' },
   -- Optional native sorter. After first install run:
   --   cd ~/.local/share/nvim/site/pack/core/opt/telescope-fzf-native.nvim && make
