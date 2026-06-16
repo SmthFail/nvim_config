@@ -50,6 +50,10 @@ vim.diagnostic.config({
   virtual_lines = true,
 })
 
+
+-- enable experimental ui (>0.12)
+require('vim._core.ui2').enable({})
+
 -- Common LSP config.
 vim.lsp.config('*', {
   capabilities = {
